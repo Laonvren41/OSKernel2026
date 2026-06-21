@@ -35,3 +35,4 @@ make run LOG=DEBUG ARCH=riscv64
 `make all` 可以在根目录下构建 `kernel-rv` 和 `kernel-la` 两个 ELF 文件。
 
 初始进程的链接设置位于 `os/src/task/initproc_*.S` 中，通过将初始进程的 ELF 文件链接到内核镜像中，从而在系统启动后运行，可以修改 `.incbin` 来链接不同的应用程序作为初始进程。链接的文件必须要是 ELF 格式文件。
+ 
