@@ -1,0 +1,338 @@
+//! Implementation of process [`ProcessControlBlock`] and task(thread) [`TaskControlBlock`] management mechanism
+//!
+//!
+//!
+//! Here is the entry for task scheduling required by other modules
+//! (such as syscall or clock interrupt).
+//! By suspending or exiting the current task, you can
+//! modify the task state, manage the task queue through TASK_MANAGER (in task/manager.rs) ,
+//! and switch the control flow through PROCESSOR (in task/processor.rs) .
+//!
+//! Be careful when you see [`__switch`]. Control flow around this function
+//! might not be what you expect.
+
+mod aux;
+mod context;
+mod futex;
+mod id;
+mod manager;
+mod process;
+mod processor;
+mod stride;
+mod switch;
+#[allow(clippy::module_inception)]
+mod task;
+
+//use self::id::TaskUserRes;
+//use crate::drivers::BLOCK_DEVICE;
+//use crate::fs::ext4::ROOT_INO;
+use crate::fs::{open, OpenFlags, NONE_MODE};
+use crate::println;
+use crate::task::id::heap_id_dealloc;
+use crate::task::manager::{add_stopping_task, remove_from_tid2task};
+use crate::timer::remove_timer;
+use alloc::{sync::Arc, vec::Vec};
+
+use lazy_static::*;
+use manager::fetch_task;
+use spin::Lazy;
+use switch::__switch;
+
+use crate::mm::{put_data, VirtAddr};
+use crate::signal::{send_signal_to_thread_group, SignalFlags};
+pub use aux::{Aux, AuxType};
+pub use context::TaskContext;
+pub use futex::*;
+pub use id::{heap_bottom_from_id, pid_alloc, KernelStack, PidHandle, IDLE_PID};
+pub use manager::{
+    add_block_task, add_task, insert_into_thread_group, pid2process, process_num,
+    remove_all_from_thread_group, remove_from_pid2process, remove_task, wakeup_futex_task,
+    wakeup_task, wakeup_task_by_pid, THREAD_GROUP, TID2TCB,
+};
+pub use process::{
+    CloneFlags, ProcessControlBlock, ProcessControlBlockInner, RobustList, Tms, TmsInner,
+};
+pub use processor::{current_kstack_top, current_trap_cx_user_va};
+pub use processor::{
+    current_process, current_task, current_trap_cx, current_user_token, mmap, munmap, run_tasks,
+    schedule, take_current_task, PROCESSOR, current_trap_cx_user_pa,
+};
+pub use task::{TaskControlBlock, TaskStatus};
+
+pub use id::kstack_alloc;
+
+use core::arch::{asm, global_asm};
+
+/// Make current task suspended and switch to the next task
+pub fn suspend_current_and_run_next() {
+    // There must be an application running.
+    let task = take_current_task().unwrap();
+
+    // ---- access current TCB exclusively
+    let mut task_inner = task.inner_exclusive_access();
+    let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
+    // Change status to Ready
+    task_inner.task_status = TaskStatus::Ready;
+    drop(task_inner);
+    // ---- release current TCB
+
+    // push back to ready queue.
+    add_task(task);
+    // jump to scheduling cycle
+    schedule(task_cx_ptr);
+}
+
+/// Make current task blocked and switch to the next task.
+pub fn block_current_and_run_next() {
+    let task = take_current_task().unwrap();
+    let mut task_inner = task.inner_exclusive_access();
+    let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
+    task_inner.task_status = TaskStatus::Blocked;
+    drop(task_inner);
+    add_block_task(task);
+    debug!("blocking, to schedule");
+    schedule(task_cx_ptr);
+}
+
+use crate::board::QEMUExit;
+
+/// Exit the current 'Running' task and run the next task in task list.
+pub fn exit_current_and_run_next(exit_code: i32) {
+    let task = take_current_task().unwrap();
+    let mut task_inner = task.inner_exclusive_access();
+    let process = task.process.upgrade().unwrap();
+    let tid = task_inner.tid;
+    let num = process.get_task_len();
+    debug!("exit, the process's task len is : {}", num);
+    // record exit code
+    task_inner.exit_code = Some(exit_code);
+
+    // here we do not remove the thread since we are still using the kstack
+    // it will be deallocated when sys_waittid is called
+    drop(task_inner);
+    // Move the task to stop-wait status, to avoid kernel stack from being freed
+
+    let mut inner = process.inner_exclusive_access();
+    if inner.clear_child_tid != 0 {
+        let token = inner.get_user_token();
+        put_data(token, inner.clear_child_tid as *mut u32, 0);
+        // 唤醒等待在 child_tid 的进程
+        let pa = inner
+            .memory_set
+            .translate_va(VirtAddr::from(inner.clear_child_tid))
+            .unwrap();
+        let thread_shared_key = FutexKey::new(pa, task.pid());
+        futex_wake_up(thread_shared_key, 1);
+        let process_shared_key = FutexKey::new(pa, 0);
+        futex_wake_up(process_shared_key, 1);
+    }
+    for (idx, t) in inner.tasks.iter().enumerate() {
+        if t.clone().unwrap().tid() == task.tid() {
+            inner.tasks.remove(idx);
+            break;
+        }
+    }
+
+    remove_from_tid2task(task.tid());
+    drop(inner);
+    task.dealloc_user_res();
+
+    #[cfg(target_arch = "riscv64")]
+    if tid == 0 {
+        add_stopping_task(task);
+    } else {
+        drop(task);
+    }
+    #[cfg(target_arch = "loongarch64")]
+    drop(task);
+    // however, if this is the main thread of current process
+    // the process should terminate at once
+    if num == 1 {
+        let pid = process.getpid();
+        if pid == IDLE_PID {
+            // to shutdown
+            println!(
+                "[kernel] Idle process exit with exit_code {} ...",
+                exit_code
+            );
+            #[cfg(target_arch = "riscv64")]
+            if exit_code != 0 {
+                //crate::sbi::shutdown(255); //255 == -1 for err hint
+                crate::board::QEMU_EXIT_HANDLE.exit_failure();
+            } else {
+                //crate::sbi::shutdown(0); //0 for success hint
+                crate::board::QEMU_EXIT_HANDLE.exit_success();
+            }
+        }
+        //remove_from_pid2process(pid);
+        let mut process_inner = process.inner_exclusive_access();
+        // mark this process as a zombie process
+        process_inner.is_zombie = true;
+        // record exit code of main process
+        process_inner.exit_code = exit_code;
+        // wakeup his parent
+
+        let parent = process_inner.parent.clone().unwrap();
+        let ppid = parent.upgrade().unwrap().getpid();
+        wakeup_task_by_pid(ppid);
+
+        // deallocate user res (including tid/trap_cx/ustack) of all threads
+        // it has to be done before we dealloc the whole memory_set
+        // otherwise they will be deallocated twice
+        // let mut recycle_res = Vec::<TaskControlBlock>::new();
+        for task in process_inner.tasks.iter().filter(|t| t.is_some()) {
+            let task = task.as_ref().unwrap();
+            // if other tasks are Ready in TaskManager or waiting for a timer to be
+            // expired, we should remove them.
+            //
+            // Mention that we do not need to consider Mutex/Semaphore since they
+            // are limited in a single process. Therefore, the blocked tasks are
+            // removed when the PCB is deallocated.
+            //trace!("kernel: exit_current_and_run_next .. remove_inactive_task");
+            remove_inactive_task(Arc::clone(&task));
+        }
+
+        drop(process_inner);
+
+        let mut process_inner = process.inner_exclusive_access();
+        //process_inner.children.clear();
+
+        process_inner.memory_set.recycle_data_pages();
+
+        if let Some(fd_table) = Arc::get_mut(&mut process_inner.fd_table) {
+            fd_table.clear();
+        }
+        debug!("in exit, to remove tasks");
+        // remove all tasks, release all threads
+        process_inner.tasks.clear();
+        debug!("all clear ok");
+        //debug!("after clear, the parent fd table len is :{}",)
+        heap_id_dealloc(process_inner.heap_id);
+
+        drop(process_inner);
+        #[cfg(target_arch = "loongarch64")]
+        // 使得原来的TLB表项无效掉，否则下一个进程与当前退出的进程号相同会导致
+        // 无法正确进行地址转换
+        unsafe {
+            asm!("invtlb 0x4,{},$r0",in(reg) pid);
+        }
+        {
+            //debug!("work at exit for {} {}", task.pid(), task.tid());
+            let thread_group = THREAD_GROUP.lock();
+            if let Some(tasks) = thread_group.get(&process.getpid()) {
+                if tasks
+                    .iter()
+                    .all(|task| task.inner_exclusive_access().is_zombie == true)
+                {
+                    drop(thread_group);
+                    send_signal_to_thread_group(ppid, SignalFlags::SIGCHLD);
+                    let inner = process.inner_exclusive_access();
+                    inner.memory_set.recycle_data_pages();
+                    inner.fd_table.clear();
+                    inner.fs_info.clear();
+                    if inner.sig_table.not_exited() {
+                        inner.sig_table.set_exit_code(exit_code);
+                    }
+                    //wakeup_parent(task.ppid());
+                }
+            }
+        }
+        debug!("(exit_current_and_run_next) current pid={}", pid);
+        //wakeup_parent(parent.upgrade().unwrap().getpid());
+    }
+    drop(process);
+    // we do not have to save task context
+    let mut _unused = TaskContext::zero_init();
+    schedule(&mut _unused as *mut _);
+}
+
+#[cfg(target_arch = "riscv64")]
+global_asm!(include_str!("initproc_rv.S"));
+#[cfg(target_arch = "loongarch64")]
+global_asm!(include_str!("initproc_la.S"));
+pub static INITPROC: Lazy<Arc<ProcessControlBlock>> = Lazy::new(|| {
+    debug!("kernel: INITPROC is being initialized");
+    unsafe {
+        extern "C" {
+            fn initproc_start();
+            fn initproc_end();
+        }
+        let start = initproc_start as usize as *const usize as *const u8;
+        let len = initproc_end as usize - initproc_start as usize;
+        let data = core::slice::from_raw_parts(start, len);
+        ProcessControlBlock::new(data)
+    }
+
+    // let initproc = open("/initproc", OpenFlags::O_RDONLY, NONE_MODE)
+    //     .expect("open initproc error!")
+    //     .file()
+    //     .expect("initproc can not be abs file!");
+    // let elf_data = initproc.inode.read_all().unwrap();
+    // let res = ProcessControlBlock::new(&elf_data);
+    // res
+});
+
+///Add init process to the manager
+pub fn add_initproc() {
+    let initproc = INITPROC.clone();
+    let inner = initproc.inner_exclusive_access();
+    let mut p = PROCESSOR.exclusive_access();
+    p.current = Some(inner.tasks[0].clone().unwrap());
+    insert_into_thread_group(0, &INITPROC);
+}
+/// Check if the current task has any signal to handle
+pub fn check_signals_of_current() -> Option<(i32, &'static str)> {
+    let process = current_process();
+    let process_inner = process.inner_exclusive_access();
+    process_inner.signals.check_error()
+}
+
+/// Add signal to the current task
+pub fn current_add_signal(signal: SignalFlags) {
+    let process = current_process();
+    let mut process_inner = process.inner_exclusive_access();
+    process_inner.signals |= signal;
+}
+
+/// the inactive(blocked) tasks are removed when the PCB is deallocated.(called by exit_current_and_run_next)
+pub fn remove_inactive_task(task: Arc<TaskControlBlock>) {
+    remove_task(Arc::clone(&task));
+    remove_timer(Arc::clone(&task));
+    //add_task(INITPROC.clone());
+    //将主线程退出的那些处于等待的子线程也删除掉
+}
+
+pub fn current_uid() -> u32 {
+    //CUR_UID.load(core::sync::atomic::Ordering::SeqCst)
+    //unimplemented!()
+    let current = current_task().unwrap();
+    current.process.upgrade().unwrap().getuid() as u32
+}
+
+pub fn current_token() -> usize {
+    // get_proc_by_hartid(hart_id()).token()
+    #[cfg(target_arch = "riscv64")]
+    return riscv::register::satp::read().bits();
+
+    unimplemented!()
+}
+
+pub fn exit_current_group_and_run_next(exit_code: i32) {
+    let process = current_process();
+    let inner = process.inner_exclusive_access();
+    let mut exit_code = exit_code;
+    if inner.sig_table.not_exited() {
+        //设置进程的SIGNAL_GROUP_EXIT标志并把终止代号放到current->signal->group_exit_code字段
+        inner.sig_table.set_exit_code(exit_code);
+        let pid = process.getpid();
+        drop(inner);
+        drop(process);
+        send_signal_to_thread_group(pid, SignalFlags::SIGKILL);
+    } else {
+        exit_code = inner.sig_table.exit_code();
+        drop(inner);
+        drop(process);
+    }
+
+    exit_current_and_run_next(exit_code);
+}
