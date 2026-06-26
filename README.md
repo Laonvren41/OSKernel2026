@@ -9,11 +9,9 @@ SubsToKernel 本身基于 [rCore-Tutorial-v3](https://github.com/rcore-os/rCore-
  
 ## 参赛文档
 
-系统介绍文档在 [docs](./docs/) 文件夹。可以分别在此查看[初赛参赛文档](./docs/prel/初赛文档.md)，[决赛文档](./docs/final/决赛文档.md)，和[现场赛文档](./docs/site/现场赛文档.md)。
+系统设计方案文档：[docs/design_doc.md](./docs/design_doc.md)
 
-测试初赛测例的分支为[当前分支](https://github.com/wdlin233/osrepo)，决赛测例为 [final-test](https://github.com/wdlin233/osrepo/tree/final-test)，现场赛分支为 [git-site](https://github.com/wdlin233/osrepo/tree/git-site)。
-
-[GitLab 仓库](https://gitlab.eduxiji.net/T202510008995695/oskernel2025-osrepo) 与 [GitHub 仓库](https://github.com/wdlin233/osrepo) 保持同步。
+测试截图：[docs/img/test_result.png](./docs/img/test_result.png)
 
 ## 参赛信息
 
@@ -22,20 +20,23 @@ SubsToKernel 本身基于 [rCore-Tutorial-v3](https://github.com/rcore-os/rCore-
 - 参赛学校：河南理工大学
 - 队伍成员：霍启晨，孙铭浩，李辉
 
+## 仓库地址
+
+- [GitLab（比赛平台）](https://gitlab.eduxiji.net/T2026104609910064/oskernel2026-t20261046099100641)
+- [GitHub](https://github.com/Laonvren41/OSKernel2026)
+
 ## 使用说明
 
-克隆项目后，在项目根目录下运行 `make run [LOG=<日志级别>] [ARCH=<目标架构>]` 即可启动 QEMU 运行内核。
-
-需要在根目录准备 `sdcard-rv.img` 和 `sdcard-la.img` 两个镜像文件，可以选择 `riscv64` 和 `loongarch64` 两个架构，例如：
+克隆项目：
 
 ```shell
-make run LOG=DEBUG ARCH=riscv64
+git clone https://gitlab.eduxiji.net/T2026104609910064/oskernel2026-t20261046099100641.git
 ```
 
-`make all` 可以在根目录下构建 `kernel-rv` 和 `kernel-la` 两个 ELF 文件。
+编译与运行：
 
-初始进程的链接设置位于 `os/src/task/initproc_*.S` 中，通过将初始进程的 ELF 文件链接到内核镜像中，从而在系统启动后运行，可以修改 `.incbin` 来链接不同的应用程序作为初始进程。链接的文件必须要是 ELF 格式文件。
- 
-## 开发记录
-# 环境配置
-### 编译
+```shell
+bash build_all.sh   # 编译双架构内核
+bash run_qemu.sh    # QEMU 快速启动（ext4 验证）
+bash run_test.sh    # 跑完整测例
+```
