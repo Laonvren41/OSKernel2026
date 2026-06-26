@@ -20,7 +20,7 @@ SubsToKernel 本身基于 [rCore-Tutorial-v3](https://github.com/rcore-os/rCore-
 - 参赛队名：外卖只点拼好饭
 - 队伍ID：T2026104609910064
 - 参赛学校：河南理工大学
-- 队伍成员：（待填）
+- 队伍成员：霍启晨，孙铭浩，李辉
 
 ## 使用说明
 
