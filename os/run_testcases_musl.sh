@@ -280,6 +280,12 @@ if [ -f ../glibc/busybox ]; then
             [ -z "$line" ] && continue
             [ "$line" = "ls" ] && continue
             ../glibc/busybox $line
+            RTN=$?
+            if [ $RTN -ne 0 ] && [ "$line" != "false" ]; then
+                echo "testcase busybox $line fail"
+            else
+                echo "testcase busybox $line success"
+            fi
         done < ../glibc/busybox_cmd.txt
     fi
     ../glibc/busybox echo "#### OS COMP TEST GROUP END busybox-glibc ####"
