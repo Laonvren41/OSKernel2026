@@ -55,21 +55,19 @@ endif
 
 
 env:
-	(rustup target list | grep "$(TARGET) (installed)") || rustup target add $(TARGET)
-	cargo install cargo-binutils
-	rustup component add rust-src
-	rustup component add llvm-tools-preview
+	# 评测环境无网络，跳过 rustup/cargo install
+	@echo "skipping env setup for offline eval"
 
 # cargo build $(MODE_ARG) --target $(TARGET)
 kernel:
-	cargo build --$(MODE) -p os --target ${TARGET}
+	CARGO_NET_OFFLINE=true cargo build --$(MODE) -p os --target ${TARGET} --offline
 
 config:
 	@rm -rf .cargo
 	@cp -r cargo .cargo
 
 clean:
-	@cargo clean
+	@rm -rf target
 	-tmux kill-server
 
 # Debugging

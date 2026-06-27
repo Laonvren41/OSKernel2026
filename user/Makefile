@@ -19,7 +19,7 @@ ELFS := $(patsubst $(APP_DIR)/%.rs, $(TARGET_DIR)/%, $(APPS))
 
 binary: config
 	@echo $(ELFS)
-	cargo build --release
+	CARGO_NET_OFFLINE=true cargo build --release --offline
 	@$(foreach elf, $(ELFS), \
 		$(OBJCOPY) $(elf) --strip-all -O binary $(patsubst $(TARGET_DIR)/%, $(TARGET_DIR)/%.bin, $(elf)); \
 		cp $(elf) $(patsubst $(TARGET_DIR)/%, $(TARGET_DIR)/%.elf, $(elf));)
@@ -32,26 +32,25 @@ pre:
 	@$(foreach t, $(APPS), cp $(t) $(BUILD_DIR)/app/;)
 
 ifeq ($(ARCH),riscv64)
-build: env clean pre binary
+build: env pre binary
 	@$(foreach t, $(ELFS), cp $(t).bin $(BUILD_DIR)/bin/;)
 	@$(foreach t, $(ELFS), cp $(t) $(BUILD_DIR)/elf/;)
 else ifeq ($(ARCH),loongarch64)
-build: env clean
+build: env
 	@echo "It is running on loongarch64 architecture"
-	@cargo build --release --target $(TARGET)
+	CARGO_NET_OFFLINE=true cargo build --release --target $(TARGET) --offline
 endif
 
 config:
-	rustup target add $(TARGET)
 	@rm -rf .cargo
 	@cp -r cargo .cargo
 
 clean:
-	@cargo clean
-	@rm -rf $(BUILD_DIR)
+	@rm -rf target $(BUILD_DIR)
 
 env:
-	rustup target add $(TARGET)
+	# 评测环境无网络，跳过 rustup
+	@echo "skipping env setup for offline eval"
 
 all: build
 
