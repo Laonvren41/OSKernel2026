@@ -5,4 +5,4 @@ target = "riscv64gc-unknown-none-elf"
 replace-with = "vendored-sources"
 
 [source.vendored-sources]
-directory = "../os/vendor"
+directory = "vendor"
