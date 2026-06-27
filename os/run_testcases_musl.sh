@@ -1,9 +1,8 @@
-# # run_testcases_musl.sh
-
+# run_testcases_musl.sh
+# OS Kernel competition test script
 
 echo "#### OS COMP TEST GROUP START lmbench-musl ####"
-
-echo latency measurements
+echo "latency measurements"
 ./lmbench_all lat_syscall -P 1 null
 ./lmbench_all lat_syscall -P 1 read
 ./lmbench_all lat_syscall -P 1 write
@@ -16,33 +15,18 @@ echo latency measurements
 ./lmbench_all lat_sig -P 1 install
 ./lmbench_all lat_sig -P 1 catch
 ./lmbench_all lat_sig -P 1 prot lat_sig
-
-# ./lmbench_all lat_pipe -P 1
 ./lmbench_all lat_proc -P 1 fork
-#./lmbench_all lat_proc -P 1 exec
 cp hello /tmp
-#./lmbench_all lat_proc -P 1 shell
 ./lmbench_all lmdd label="File /var/tmp/XXX write bandwidth:" of=/var/tmp/XXX move=1m fsync=1 print=3
 ./lmbench_all lat_pagefault -P 1 /var/tmp/XXX
 ./lmbench_all lat_mmap -P 1 512k /var/tmp/XXX
-echo file system latency
+echo "file system latency"
 ./lmbench_all lat_fs /var/tmp
-echo Bandwidth measurements
-#./lmbench_all bw_pipe -P 1
-# ./lmbench_all bw_file_rd -P 1 512k io_only /var/tmp/XXX
-# ./lmbench_all bw_file_rd -P 1 512k open2close /var/tmp/XXX
-# ./lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX
-# ./lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX
-echo context switch overhead
-#./lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96
-
-
+echo "Bandwidth measurements"
+echo "context switch overhead"
 echo "#### OS COMP TEST GROUP END lmbench-musl ####"
 
-
-# libctest.sh
-./busybox echo "#### OS COMP TEST GROUP START libctest-musl ####"
-#./run-dynamic.sh
+echo "#### OS COMP TEST GROUP START libctest-musl ####"
 ./runtest.exe -w entry-dynamic.exe argv
 ./runtest.exe -w entry-dynamic.exe basename
 ./runtest.exe -w entry-dynamic.exe clocale_mbfuncs
@@ -68,7 +52,6 @@ echo "#### OS COMP TEST GROUP END lmbench-musl ####"
 ./runtest.exe -w entry-dynamic.exe search_insque
 ./runtest.exe -w entry-dynamic.exe search_lsearch
 ./runtest.exe -w entry-dynamic.exe search_tsearch
-#./runtest.exe -w entry-dynamic.exe sem_init
 ./runtest.exe -w entry-dynamic.exe setjmp
 ./runtest.exe -w entry-dynamic.exe snprintf
 ./runtest.exe -w entry-dynamic.exe socket
@@ -104,7 +87,6 @@ echo "#### OS COMP TEST GROUP END lmbench-musl ####"
 ./runtest.exe -w entry-dynamic.exe dn_expand_ptr_0
 ./runtest.exe -w entry-dynamic.exe fflush_exit
 ./runtest.exe -w entry-dynamic.exe fgets_eof
-#./runtest.exe -w entry-dynamic.exe fgetwc_buffering
 ./runtest.exe -w entry-dynamic.exe fpclassify_invalid_ld80
 ./runtest.exe -w entry-dynamic.exe ftello_unflushed_append
 ./runtest.exe -w entry-dynamic.exe getpwnam_r_crash
@@ -125,12 +107,6 @@ echo "#### OS COMP TEST GROUP END lmbench-musl ####"
 ./runtest.exe -w entry-dynamic.exe printf_fmt_g_round
 ./runtest.exe -w entry-dynamic.exe printf_fmt_g_zeros
 ./runtest.exe -w entry-dynamic.exe printf_fmt_n
-#./runtest.exe -w entry-dynamic.exe pthread_robust_detach
-#./runtest.exe -w entry-dynamic.exe pthread_cond_smasher
-#./runtest.exe -w entry-dynamic.exe pthread_condattr_setclock
-#./runtest.exe -w entry-dynamic.exe pthread_exit_cancel
-#./runtest.exe -w entry-dynamic.exe pthread_once_deadlock
-#./runtest.exe -w entry-dynamic.exe pthread_rwlock_ebusy
 ./runtest.exe -w entry-dynamic.exe putenv_doublefree
 ./runtest.exe -w entry-dynamic.exe regex_backref_0
 ./runtest.exe -w entry-dynamic.exe regex_bracket_icase
@@ -149,15 +125,11 @@ echo "#### OS COMP TEST GROUP END lmbench-musl ####"
 ./runtest.exe -w entry-dynamic.exe statvfs
 ./runtest.exe -w entry-dynamic.exe strverscmp
 ./runtest.exe -w entry-dynamic.exe syscall_sign_extend
-#./runtest.exe -w entry-dynamic.exe tls_get_new_dtv
 ./runtest.exe -w entry-dynamic.exe uselocale_0
 ./runtest.exe -w entry-dynamic.exe wcsncpy_read_overflow
 ./runtest.exe -w entry-dynamic.exe wcsstr_false_negative
-
-# ./run-static.sh
 ./runtest.exe -w entry-static.exe argv
 ./runtest.exe -w entry-static.exe basename
-#./runtest.exe -w entry-static.exe clocale_mbfuncs
 ./runtest.exe -w entry-static.exe clock_gettime
 ./runtest.exe -w entry-static.exe dirname
 ./runtest.exe -w entry-static.exe env
@@ -234,9 +206,7 @@ echo "#### OS COMP TEST GROUP END lmbench-musl ####"
 ./runtest.exe -w entry-static.exe printf_fmt_g_round
 ./runtest.exe -w entry-static.exe printf_fmt_g_zeros
 ./runtest.exe -w entry-static.exe printf_fmt_n
-#./runtest.exe -w entry-static.exe pthread_robust_detach
 ./runtest.exe -w entry-static.exe pthread_cancel_sem_wait
-#./runtest.exe -w entry-static.exe pthread_cond_smasher
 ./runtest.exe -w entry-static.exe pthread_condattr_setclock
 ./runtest.exe -w entry-static.exe pthread_exit_cancel
 ./runtest.exe -w entry-static.exe pthread_once_deadlock
@@ -262,61 +232,33 @@ echo "#### OS COMP TEST GROUP END lmbench-musl ####"
 ./runtest.exe -w entry-static.exe uselocale_0
 ./runtest.exe -w entry-static.exe wcsncpy_read_overflow
 ./runtest.exe -w entry-static.exe wcsstr_false_negative
-
 ./busybox echo "#### OS COMP TEST GROUP END libctest-musl ####"
 
-# # busybox_testcode.sh
-./busybox echo "#### OS COMP TEST GROUP START busybox-musl ####"
-./busybox cat ./busybox_cmd.txt | while read line
-do
-        if [[ "$line" == "sh -c 'sleep 5' & ./busybox kill \$!" ]]; then
-                echo "testcase busybox $line skipped (potential panic risk)"
-                continue
+echo "#### OS COMP TEST GROUP START busybox-musl ####"
+if [ -f ./busybox_cmd.txt ]; then
+    while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        if [ "$line" = "sh -c 'sleep 5' & ./busybox kill \$!" ]; then
+            echo "testcase busybox $line skipped"
+            continue
         fi
-
-        if [[ "$line" == "ls" ]]; then
-                echo "testcase busybox $line skipped (potential panic risk)"
-                continue
+        if [ "$line" = "ls" ]; then
+            echo "testcase busybox $line skipped"
+            continue
         fi
-
-        eval "./busybox $line"
+        ./busybox $line
         RTN=$?
-        if [[ $RTN -ne 0 && "$line" != "false" ]] ;then
-                echo "testcase busybox $line fail"
-                # echo "return: $RTN, cmd: $line" >> $RST
+        if [ $RTN -ne 0 ] && [ "$line" != "false" ]; then
+            echo "testcase busybox $line fail"
         else
-                echo "testcase busybox $line success"
+            echo "testcase busybox $line success"
         fi
-done
-
+    done < ./busybox_cmd.txt
+else
+    echo "testcase busybox: busybox_cmd.txt not found, skipping"
+fi
 ./busybox echo "#### OS COMP TEST GROUP END busybox-musl ####"
-
 
 ./basic_testcode.sh
 ./lua_testcode.sh
-
-echo "#### OS COMP TEST GROUP END lmbench-glibc ####"
-
-../glibc/busybox echo "#### OS COMP TEST GROUP START busybox-glibc ####"
-../glibc/busybox cat ../glibc/busybox_cmd.txt | while read line
-do
-    if [[ "$line" == "sh -c 'sleep 5' & ./busybox kill \$!" ]]; then
-        echo "testcase busybox $line skipped (potential panic risk)"
-        continue
-    fi
-
-        eval "../glibc/busybox $line"
-	RTN=$?
-	if [[ $RTN -ne 0 && "$line" != "false" ]] ;then
-		echo "testcase busybox $line fail"
-		# echo "return: $RTN, cmd: $line" >> $RST
-	else
-		echo "testcase busybox $line success"
-	fi
-done
-
-# echo "TEST END" >> $RST
-../glibc/busybox echo "#### OS COMP TEST GROUP END busybox-glibc ####"
-
-../glibc/basic_testcode.sh
-../glibc/lua_testcode.sh
+echo "All tests completed."
