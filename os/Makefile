@@ -58,8 +58,6 @@ endif
 
 
 env:
-	# 强制rustup离线
-	mkdir -p /root/.rustup 2>/dev/null; printf 'auto-self-update = false\n' > /root/.rustup/settings.toml 2>/dev/null; true
 	@echo "env setup done"
 
 # cargo build $(MODE_ARG) --target $(TARGET)
