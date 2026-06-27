@@ -53,9 +53,12 @@ clean:
 	@rm -rf target $(BUILD_DIR)
 
 env:
-	# 强制rustup离线
-	mkdir -p /root/.rustup 2>/dev/null; printf 'auto-self-update = false\n' > /root/.rustup/settings.toml 2>/dev/null; true
-	@echo "env setup done"
+	# 诊断: 看看评测环境有什么
+	@echo "=== ENV DIAG ==="
+	@which cargo rustc 2>/dev/null || echo "no rustup proxy"
+	@ls /root/.rustup/toolchains/ 2>/dev/null || echo "no toolchains dir"
+	@ls /root/.cargo/bin/ 2>/dev/null || echo "no cargo bin"
+	@echo "=== ENV DIAG END ==="
 
 all: build
 
