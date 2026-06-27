@@ -22,6 +22,7 @@ extern crate user_lib;
     //"/glibc/busybox_testcode.sh\0",
 */
 const TESTS: &[&str] = &[
+    "/test_all.sh\0",
     "/musl/run_testcases_musl.sh\0",
 ];
 
@@ -38,8 +39,10 @@ pub fn main() -> i32 {
         if pid == 0 {
             let cwd = if test.contains("/musl") {
                 "/musl/busybox\0"
-            } else {
+            } else if test.contains("/glibc") {
                 "/glibc/busybox\0"
+            } else {
+                "/busybox\0"
             };
             run_busyboxsh(test, cwd);
             panic!("unreachable!");
