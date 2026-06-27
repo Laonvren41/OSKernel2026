@@ -289,6 +289,22 @@ if [ -f ../glibc/busybox ]; then
         done < ../glibc/busybox_cmd.txt
     fi
     ../glibc/busybox echo "#### OS COMP TEST GROUP END busybox-glibc ####"
+
+            # glibc libctest
+            ../glibc/busybox echo "#### OS COMP TEST GROUP START libctest-glibc ####"
+            if [ -f ../glibc/runtest.exe ]; then
+                cd ../glibc
+                for t in entry-dynamic.exe entry-static.exe; do
+                    [ ! -f "$t" ] && continue
+                    for test in argv basename clock_gettime dirname env stat time socket; do
+                        echo "========== START $t $test =========="
+                        ./runtest.exe -w $t $test
+                        echo "========== END $t $test =========="
+                    done
+                done
+                cd ../musl
+            fi
+            ../glibc/busybox echo "#### OS COMP TEST GROUP END libctest-glibc ####"
 else
     echo "glibc busybox not found, skipping glibc tests"
 fi
