@@ -2,6 +2,10 @@
 ARCH := riscv64
 MODE := release
 
+# 绕过rustup，评测环境离线
+export RUSTC=/root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin/rustc
+export CARGO_NET_OFFLINE=true
+
 # Binutils, objcopy riscv64 only
 OBJCOPY := rust-objcopy --binary-architecture=riscv64
 

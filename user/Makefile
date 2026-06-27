@@ -1,5 +1,9 @@
 ARCH := riscv64
 
+# 绕过rustup，评测环境离线
+export RUSTC=/root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin/rustc
+export CARGO_NET_OFFLINE=true
+
 ifeq ($(ARCH), riscv64)
   	TARGET := riscv64gc-unknown-none-elf
 else ifeq ($(ARCH), loongarch64)
