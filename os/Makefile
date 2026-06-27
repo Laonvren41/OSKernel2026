@@ -2,10 +2,8 @@
 ARCH := riscv64
 MODE := release
 
-# 绕过rustup代理，直接调toolchain内二进制
-TC := /root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin
-CARGO := $(TC)/cargo
-RUSTC := $(TC)/rustc
+# 禁用rustup联网
+export RUSTUP_DIST_SERVER=file:///dev/null
 export CARGO_NET_OFFLINE=true
 
 # Binutils, objcopy riscv64 only
@@ -61,12 +59,13 @@ endif
 
 
 env:
-	# 评测环境无网络，跳过 rustup/cargo install
-	@echo "skipping env setup for offline eval"
+	# 强制rustup离线
+	mkdir -p /root/.rustup 2>/dev/null; printf 'auto-self-update = false\n' > /root/.rustup/settings.toml 2>/dev/null; true
+	@echo "env setup done"
 
 # cargo build $(MODE_ARG) --target $(TARGET)
 kernel:
-	$(CARGO) build --$(MODE) -p os --target ${TARGET} --offline
+	cargo build --$(MODE) -p os --target ${TARGET} --offline
 
 config:
 	@rm -rf .cargo

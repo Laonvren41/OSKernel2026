@@ -1,9 +1,7 @@
 ARCH := riscv64
 
-# 绕过rustup代理，直接调toolchain内二进制
-TC := /root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin
-CARGO := $(TC)/cargo
-RUSTC := $(TC)/rustc
+# 禁用rustup联网
+export RUSTUP_DIST_SERVER=file:///dev/null
 export CARGO_NET_OFFLINE=true
 
 ifeq ($(ARCH), riscv64)
@@ -25,7 +23,7 @@ ELFS := $(patsubst $(APP_DIR)/%.rs, $(TARGET_DIR)/%, $(APPS))
 
 binary: config
 	@echo $(ELFS)
-	$(CARGO) build --release --offline
+	cargo build --release --offline
 	@$(foreach elf, $(ELFS), \
 		$(OBJCOPY) $(elf) --strip-all -O binary $(patsubst $(TARGET_DIR)/%, $(TARGET_DIR)/%.bin, $(elf)); \
 		cp $(elf) $(patsubst $(TARGET_DIR)/%, $(TARGET_DIR)/%.elf, $(elf));)
@@ -44,7 +42,7 @@ build: env pre binary
 else ifeq ($(ARCH),loongarch64)
 build: env
 	@echo "It is running on loongarch64 architecture"
-	$(CARGO) build --release --target $(TARGET) --offline
+	cargo build --release --target $(TARGET) --offline
 endif
 
 config:
@@ -55,8 +53,9 @@ clean:
 	@rm -rf target $(BUILD_DIR)
 
 env:
-	# 评测环境无网络，跳过 rustup
-	@echo "skipping env setup for offline eval"
+	# 强制rustup离线
+	mkdir -p /root/.rustup 2>/dev/null; printf 'auto-self-update = false\n' > /root/.rustup/settings.toml 2>/dev/null; true
+	@echo "env setup done"
 
 all: build
 
