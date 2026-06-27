@@ -305,6 +305,22 @@ if [ -f ../glibc/busybox ]; then
                 cd ../musl
             fi
             ../glibc/busybox echo "#### OS COMP TEST GROUP END libctest-glibc ####"
+
+            # glibc lmbench
+            ../glibc/busybox echo "#### OS COMP TEST GROUP START lmbench-glibc ####"
+            if [ -f ../glibc/lmbench_testcode.sh ]; then
+                cd ../glibc && ./lmbench_testcode.sh && cd ../musl
+            elif [ -f ../glibc/lmbench_all ]; then
+                ../glibc/lmbench_all lat_syscall -P 1 null
+                ../glibc/lmbench_all lat_syscall -P 1 read
+                ../glibc/lmbench_all lat_syscall -P 1 write
+                ../glibc/lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench
+                ../glibc/lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench
+                ../glibc/lmbench_all lat_syscall -P 1 open /var/tmp/lmbench
+                ../glibc/lmbench_all lat_proc -P 1 fork
+                ../glibc/lmbench_all lat_proc -P 1 exec
+            fi
+            ../glibc/busybox echo "#### OS COMP TEST GROUP END lmbench-glibc ####"
 else
     echo "glibc busybox not found, skipping glibc tests"
 fi
