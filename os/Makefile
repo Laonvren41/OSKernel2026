@@ -2,8 +2,9 @@
 ARCH := riscv64
 MODE := release
 
-# 绕过rustup，评测环境离线
+# 绕过rustup代理，直接用toolchain内二进制
 export RUSTC=/root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin/rustc
+export CARGO=/root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin/cargo
 export CARGO_NET_OFFLINE=true
 
 # Binutils, objcopy riscv64 only
