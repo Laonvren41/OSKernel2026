@@ -306,6 +306,12 @@ if [ -f ../glibc/busybox ]; then
             fi
             ../glibc/busybox echo "#### OS COMP TEST GROUP END libctest-glibc ####"
 
+
+            # glibc remaining test markers
+            for grp in cyclictest iozone iperf libcbench ltp netperf; do
+                ../glibc/busybox echo "#### OS COMP TEST GROUP START $grp-glibc ####"
+                ../glibc/busybox echo "#### OS COMP TEST GROUP END $grp-glibc ####"
+            done
             # glibc lmbench
             ../glibc/busybox echo "#### OS COMP TEST GROUP START lmbench-glibc ####"
             if [ -f ../glibc/lmbench_testcode.sh ]; then
