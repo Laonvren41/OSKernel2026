@@ -1,8 +1,9 @@
 ARCH := riscv64
 
-# 绕过rustup代理，直接用toolchain内二进制
-export RUSTC=/root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin/rustc
-export CARGO=/root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin/cargo
+# 绕过rustup代理，直接调toolchain内二进制
+TC := /root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin
+CARGO := $(TC)/cargo
+RUSTC := $(TC)/rustc
 export CARGO_NET_OFFLINE=true
 
 ifeq ($(ARCH), riscv64)
@@ -24,7 +25,7 @@ ELFS := $(patsubst $(APP_DIR)/%.rs, $(TARGET_DIR)/%, $(APPS))
 
 binary: config
 	@echo $(ELFS)
-	CARGO_NET_OFFLINE=true cargo build --release --offline
+	$(CARGO) build --release --offline
 	@$(foreach elf, $(ELFS), \
 		$(OBJCOPY) $(elf) --strip-all -O binary $(patsubst $(TARGET_DIR)/%, $(TARGET_DIR)/%.bin, $(elf)); \
 		cp $(elf) $(patsubst $(TARGET_DIR)/%, $(TARGET_DIR)/%.elf, $(elf));)
@@ -43,7 +44,7 @@ build: env pre binary
 else ifeq ($(ARCH),loongarch64)
 build: env
 	@echo "It is running on loongarch64 architecture"
-	CARGO_NET_OFFLINE=true cargo build --release --target $(TARGET) --offline
+	$(CARGO) build --release --target $(TARGET) --offline
 endif
 
 config:

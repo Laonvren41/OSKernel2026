@@ -2,9 +2,10 @@
 ARCH := riscv64
 MODE := release
 
-# 绕过rustup代理，直接用toolchain内二进制
-export RUSTC=/root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin/rustc
-export CARGO=/root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin/cargo
+# 绕过rustup代理，直接调toolchain内二进制
+TC := /root/.rustup/toolchains/nightly-2025-01-01-x86_64-unknown-linux-gnu/bin
+CARGO := $(TC)/cargo
+RUSTC := $(TC)/rustc
 export CARGO_NET_OFFLINE=true
 
 # Binutils, objcopy riscv64 only
@@ -65,7 +66,7 @@ env:
 
 # cargo build $(MODE_ARG) --target $(TARGET)
 kernel:
-	CARGO_NET_OFFLINE=true cargo build --$(MODE) -p os --target ${TARGET} --offline
+	$(CARGO) build --$(MODE) -p os --target ${TARGET} --offline
 
 config:
 	@rm -rf .cargo
