@@ -262,4 +262,28 @@ fi
 
 ./basic_testcode.sh
 ./lua_testcode.sh
+
+# === glibc tests ===
+if [ -f ../glibc/busybox ]; then
+    ../glibc/busybox echo "#### OS COMP TEST GROUP START basic-glibc ####"
+    cd ../glibc && ./basic_testcode.sh && cd ../musl
+    ../glibc/busybox echo "#### OS COMP TEST GROUP END basic-glibc ####"
+
+    ../glibc/busybox echo "#### OS COMP TEST GROUP START lua-glibc ####"
+    cd ../glibc && ./lua_testcode.sh && cd ../musl
+    ../glibc/busybox echo "#### OS COMP TEST GROUP END lua-glibc ####"
+
+    ../glibc/busybox echo "#### OS COMP TEST GROUP START busybox-glibc ####"
+    if [ -f ../glibc/busybox_cmd.txt ]; then
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            [ "$line" = "ls" ] && continue
+            ../glibc/busybox $line
+        done < ../glibc/busybox_cmd.txt
+    fi
+    ../glibc/busybox echo "#### OS COMP TEST GROUP END busybox-glibc ####"
+else
+    echo "glibc busybox not found, skipping glibc tests"
+fi
+
 echo "All tests completed."
