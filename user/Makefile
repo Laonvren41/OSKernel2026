@@ -2,6 +2,7 @@ ARCH := riscv64
 
 # 禁用rustup联网
 export RUSTUP_DIST_SERVER=file:///dev/null
+export RUSTUP_AUTO_SELF_UPDATE=0
 export CARGO_NET_OFFLINE=true
 
 ifeq ($(ARCH), riscv64)
@@ -53,12 +54,7 @@ clean:
 	@rm -rf target $(BUILD_DIR)
 
 env:
-	# 诊断: 看看评测环境有什么
-	@echo "=== ENV DIAG ==="
-	@which cargo rustc 2>/dev/null || echo "no rustup proxy"
-	@ls /root/.rustup/toolchains/ 2>/dev/null || echo "no toolchains dir"
-	@ls /root/.cargo/bin/ 2>/dev/null || echo "no cargo bin"
-	@echo "=== ENV DIAG END ==="
+	@echo "env setup done"
 
 all: build
 
