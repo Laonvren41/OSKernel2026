@@ -1,8 +1,6 @@
 ARCH := riscv64
 
-# 禁用rustup联网
-export RUSTUP_DIST_SERVER=file:///dev/null
-export RUSTUP_AUTO_SELF_UPDATE=0
+# 离线编译（评测环境无网络）
 export CARGO_NET_OFFLINE=true
 
 ifeq ($(ARCH), riscv64)
