@@ -22,7 +22,6 @@ extern crate user_lib;
     //"/glibc/busybox_testcode.sh\0",
 */
 const TESTS: &[&str] = &[
-    "/test_all.sh\0",
     "/musl/run_testcases_musl.sh\0",
 ];
 

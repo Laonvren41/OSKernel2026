@@ -388,10 +388,13 @@ pub fn sys_exec(pathp: *const u8, mut args: *const usize, mut envp: *const usize
         abs_path = String::from("/musl/busybox");
     }
     debug!("to open,the path is: {}", abs_path);
-    let app_inode = open(&abs_path, OpenFlags::O_RDONLY, NONE_MODE, cwd)
-        .unwrap()
-        .file()
-        .unwrap();
+    let app_inode = match open(&abs_path, OpenFlags::O_RDONLY, NONE_MODE, cwd) {
+        Ok(f) => match f.file() {
+            Some(ff) => ff,
+            None => return -1,
+        },
+        Err(_) => return -1,
+    };
     inner.fs_info.set_exe(abs_path);
     let elf_data = app_inode.inode.read_all().unwrap();
     drop(inner);
