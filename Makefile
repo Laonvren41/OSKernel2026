@@ -1,5 +1,5 @@
 ARCH ?= riscv64
-DOCKER_NAME ?= docker.educg.net/cg/os-contest:20250226
+DOCKER_NAME ?= zhouzhouyi/os-contest:20260510
 ifeq ($(ARCH), riscv64)
 	KERNEL_BIN := kernel-rv
 	KERNEL_ELF := os/target/riscv64gc-unknown-none-elf/release/os
