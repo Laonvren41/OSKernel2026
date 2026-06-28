@@ -117,14 +117,14 @@ pub fn exit_current_and_run_next(exit_code: i32) {
         let token = inner.get_user_token();
         put_data(token, inner.clear_child_tid as *mut u32, 0);
         // 唤醒等待在 child_tid 的进程
-        let pa = inner
-            .memory_set
-            .translate_va(VirtAddr::from(inner.clear_child_tid))
-            .unwrap();
-        let thread_shared_key = FutexKey::new(pa, task.pid());
-        futex_wake_up(thread_shared_key, 1);
-        let process_shared_key = FutexKey::new(pa, 0);
-        futex_wake_up(process_shared_key, 1);
+        if inner.clear_child_tid != 0 {
+            if let Some(pa) = inner.memory_set.translate_va(VirtAddr::from(inner.clear_child_tid)) {
+                let thread_shared_key = FutexKey::new(pa, task.pid());
+                futex_wake_up(thread_shared_key, 1);
+                let process_shared_key = FutexKey::new(pa, 0);
+                futex_wake_up(process_shared_key, 1);
+            }
+        }
     }
     for (idx, t) in inner.tasks.iter().enumerate() {
         if t.clone().unwrap().tid() == task.tid() {
