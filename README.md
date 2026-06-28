@@ -15,6 +15,8 @@ SubsToKernel 本身基于 [rCore-Tutorial-v3](https://github.com/rcore-os/rCore-
 
 演示视频：[百度网盘](https://pan.baidu.com/s/1hOAMG9hCSSIylYNzr6b9Gw?pwd=w62w)
 
+答辩PPT：[百度网盘](https://pan.baidu.com/s/1cUaStYCbouGZIg5XIQhxYQ?pwd=bjih)
+
 ## 参赛信息
 
 - 参赛队名：外卖只点拼好饭
