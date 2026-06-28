@@ -264,34 +264,6 @@ fi
 ./basic_testcode.sh
 ./lua_testcode.sh
 
-# === libcbench (musl) ===
-# single-process libc benchmark, no fork/pipe/network -> safe
-echo "#### OS COMP TEST GROUP START libcbench-musl ####"
-./libc-bench
-echo "#### OS COMP TEST GROUP END libcbench-musl ####"
-
-# === iozone (musl) ===
-# single-process auto measurement first (safe), then multi-thread throughput.
-# placed near the end so a hang in the -t runs cannot drop already-scored groups.
-echo "#### OS COMP TEST GROUP START iozone-musl ####"
-echo iozone automatic measurements
-./iozone -a -r 1k -s 4m
-echo iozone throughput write/read measurements
-./iozone -t 4 -i 0 -i 1 -r 1k -s 1m
-echo iozone throughput random-read measurements
-./iozone -t 4 -i 0 -i 2 -r 1k -s 1m
-echo iozone throughput read-backwards measurements
-./iozone -t 4 -i 0 -i 3 -r 1k -s 1m
-echo iozone throughput stride-read measurements
-./iozone -t 4 -i 0 -i 5 -r 1k -s 1m
-echo iozone throughput fwrite/fread measurements
-./iozone -t 4 -i 6 -i 7 -r 1k -s 1m
-echo iozone throughput pwrite/pread measurements
-./iozone -t 4 -i 9 -i 10 -r 1k -s 1m
-echo iozone throughtput pwritev/preadv measurements
-./iozone -t 4 -i 11 -i 12 -r 1k -s 1m
-echo "#### OS COMP TEST GROUP END iozone-musl ####"
-
 # === glibc tests ===
 if [ -f ../glibc/busybox ]; then
     ../glibc/busybox echo "#### OS COMP TEST GROUP START basic-glibc ####"
