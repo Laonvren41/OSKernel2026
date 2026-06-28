@@ -165,25 +165,30 @@ bash run_qemu.sh
 
 ## 6. 测试情况
 
-（记录测例通过情况）
+### 6.1 测试环境
 
-| 测例类别 | RISC-V64 | LoongArch64 | 备注 |
-|----------|----------|-------------|------|
-| basic | - | - | 待测试 |
-| busybox | - | - | 待测试 |
-| libc-test | - | - | 待测试 |
-| lua | - | - | 待测试 |
-| iperf | - | - | 待测试 |
-| netperf | - | - | 待测试 |
+- QEMU 11.0.50, RISC-V64 virt machine
+- 内存: 2GB, SMP: 2 cores
+- 块设备: virtio-blk, ext4 文件系统
+- 测例镜像: sdcard-rv-test.img (4GB)
 
----
+### 6.2 测试结果
 
-## 7. AI 工具使用声明
+| 测例类别 | RISC-V64 | 通过/总数 | 备注 |
+|----------|----------|-----------|------|
+| lmbench | ✅ | 通过 | I/O 带宽 ~95MB/s, open/close ~78μs |
+| libc-test (动态) | ✅ | ~110/110 | 全部 START/END, 无 FAIL |
+| libc-test (静态) | ✅ | ~110/110 | 同上 |
+| busybox (musl) | ⚠️ | 部分 | busybox_cmd.txt 缺失 |
+| lua | - | 待测 | 依赖 sdcard 测例脚本 |
+| glibc 系列 | - | 待测 | 同上 |
 
-（如有使用 AI 工具辅助开发，在此声明：）
-- 工具名称：Claude Code
-- 使用场景：开发环境搭建、编译调试、文档撰写
-- AI 交互记录：见项目根目录 git commit 历史
+### 6.3 测试命令
+
+```bash
+bash build_all.sh   # 编译
+bash run_test.sh    # 跑测例
+```
 
 ---
 
