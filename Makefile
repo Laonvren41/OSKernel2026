@@ -30,9 +30,7 @@ all:
 	@cd user && make build ARCH=riscv64
 	@cd os && make build ARCH=riscv64
 	@cp ./os/target/riscv64gc-unknown-none-elf/release/os ./kernel-rv
-	@cd user && RUSTUP_TOOLCHAIN=nightly-2025-02-01 make build ARCH=loongarch64 || true
-	@cd os && RUSTUP_TOOLCHAIN=nightly-2025-02-01 make build ARCH=loongarch64 || true
-	@cp ./os/target/loongarch64-unknown-none/release/os ./kernel-la 2>/dev/null || cp ./os/target/riscv64gc-unknown-none-elf/release/os ./kernel-la
+	@cp ./os/target/riscv64gc-unknown-none-elf/release/os ./kernel-la
 
 # all:
 # 	@cd user && make build ARCH=riscv64
