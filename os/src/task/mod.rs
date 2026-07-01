@@ -172,15 +172,13 @@ pub fn exit_current_and_run_next(exit_code: i32) {
         process_inner.exit_code = exit_code;
         // wakeup his parent
 
-        let ppid = if let Some(parent) = process_inner.parent.clone() {
+        let ppid = process_inner.parent.clone().and_then(|parent| {
             parent.upgrade().map(|p| {
                 let pid = p.getpid();
                 wakeup_task_by_pid(pid);
                 pid
             })
-        } else {
-            None
-        };
+        });
 
         // deallocate user res (including tid/trap_cx/ustack) of all threads
         // it has to be done before we dealloc the whole memory_set
@@ -231,7 +229,9 @@ pub fn exit_current_and_run_next(exit_code: i32) {
                     .all(|task| task.inner_exclusive_access().is_zombie == true)
                 {
                     drop(thread_group);
-                    send_signal_to_thread_group(ppid, SignalFlags::SIGCHLD);
+                    if let Some(pid) = ppid {
+                        send_signal_to_thread_group(pid, SignalFlags::SIGCHLD);
+                    }
                     let inner = process.inner_exclusive_access();
                     inner.memory_set.recycle_data_pages();
                     inner.fd_table.clear();

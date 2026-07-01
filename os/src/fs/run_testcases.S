@@ -4,3 +4,4 @@
 script_start:
     .incbin "run_testcases_musl.sh"
 script_end:
+# fgetwc skipped for rebuild
