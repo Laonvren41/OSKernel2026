@@ -257,10 +257,13 @@ pub fn sys_readlinkat(dirfd: isize, path: *const u8, buf: *const u8, bufsize: us
         Err(e) => return e as isize,
     };
     let mut linkbuf = vec![0u8; bufsize];
-    let file = open(&abs_path, OpenFlags::empty(), NONE_MODE, "")
-        .unwrap()
-        .file()
-        .unwrap();
+    let file = match open(&abs_path, OpenFlags::empty(), NONE_MODE, "") {
+        Ok(f) => match f.file() {
+            Some(ff) => ff,
+            None => return -1,
+        },
+        Err(_) => return -1, // ENOENT or similar
+    };
     let readcnt = file.inode.read_link(&mut linkbuf, bufsize).unwrap();
     // let mut buffer = UserBuffer::new(translated_byte_buffer(token, buf, readcnt).unwrap());
     let mut buffer =
