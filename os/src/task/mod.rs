@@ -172,12 +172,15 @@ pub fn exit_current_and_run_next(exit_code: i32) {
         process_inner.exit_code = exit_code;
         // wakeup his parent
 
-        if let Some(parent) = process_inner.parent.clone() {
-            if let Some(parent_arc) = parent.upgrade() {
-                let ppid = parent_arc.getpid();
-                wakeup_task_by_pid(ppid);
-            }
-        }
+        let ppid = if let Some(parent) = process_inner.parent.clone() {
+            parent.upgrade().map(|p| {
+                let pid = p.getpid();
+                wakeup_task_by_pid(pid);
+                pid
+            })
+        } else {
+            None
+        };
 
         // deallocate user res (including tid/trap_cx/ustack) of all threads
         // it has to be done before we dealloc the whole memory_set
