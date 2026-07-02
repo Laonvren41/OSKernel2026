@@ -176,14 +176,23 @@ bash run_qemu.sh
 
 | 测例类别 | RISC-V64 | 通过/总数 | 备注 |
 |----------|----------|-----------|------|
-| lmbench | ✅ | 通过 | I/O 带宽 ~95MB/s, open/close ~78μs |
-| libc-test (动态) | ✅ | ~110/110 | 全部 START/END, 无 FAIL |
-| libc-test (静态) | ✅ | ~110/110 | 同上 |
-| busybox (musl) | ⚠️ | 部分 | busybox_cmd.txt 缺失 |
-| lua | - | 待测 | 依赖 sdcard 测例脚本 |
-| glibc 系列 | - | 待测 | 同上 |
+| lmbench | ✅ | 通过 | I/O 带宽 116MB/s, open/close 73μs |
+| libc-test (动态) | ❌ | 0/110 | 缺动态链接器，非内核问题 |
+| libc-test (静态) | ✅ | ~108/110 | 仅 utime, fgetwc 失败 |
+| busybox | ✅ | 40+/45 | date, df, stat, wc, grep 等通过 |
+| basic | ✅ | 28/28 | 全部通过 |
+| lua | ✅ | 9/9 | 全部通过 |
 
-### 6.3 测试命令
+![测试截图](docs/img/test_result.png)
+
+### 6.3 调试过程中遇到的问题
+
+1. 测例脚本 CRLF 换行符导致 `: not found` 错误，转换为 LF 后解决
+2. `fgetwc_buffering` 管道读写会阻塞，跳过该测例
+3. `sys_readlinkat` 原版 `unwrap()` 在文件不存在时 panic，改为返回错误码
+4. 父进程退出后子进程 `unwrap()` 崩溃，加了空值判断
+
+### 6.4 测试命令
 
 ```bash
 bash build_all.sh   # 编译
